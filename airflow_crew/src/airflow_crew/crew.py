@@ -1,136 +1,133 @@
-from crewai import Agent, Crew, Process, Task
-from crewai.project import CrewBase, agent, crew, task
+from crewai import Agent, Crew, Task, LLM
+from crewai.project import CrewBase, agent, crew
+from crewai.flow.flow import Flow, listen, start
 from typing import List, Optional
 from pathlib import Path
+import yaml
 
-# If you want to run a snippet of code before or after the crew starts, 
-# you can use the @before_kickoff and @after_kickoff decorators
-# https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
-
-class AirflowCrew:
+@CrewBase
+class AirflowCrew(Flow):
     """AirflowCrew for DAG analysis, fixes and generation"""
 
     def __init__(self):
-        self.agents = self._create_agents()
-        self.tasks = {}
-
-    def _create_agents(self) -> dict:
-        # Learn more about YAML configuration files here:
-        # Agents: https://docs.crewai.com/concepts/agents#yaml-configuration-recommended
-        # Tasks: https://docs.crewai.com/concepts/tasks#yaml-configuration-recommended
-        return {
-            "dag_prognosis": Agent(
-                role="DAG Analyzer",
-                goal="Analyze DAG code for issues and improvements",
-                backstory="Expert in Apache Airflow DAG analysis focusing on code quality and patterns",
-                tools=["static_analysis", "pattern_detection"]
-            ),
-            "lead_author": Agent(
-                role="Lead DAG Author",
-                goal="Coordinate DAG modifications and generation",
-                backstory="Senior Airflow developer who orchestrates all DAG changes",
-                tools=["code_generation", "code_review"]
-            ),
-            "airflow_cli": Agent(
-                role="Airflow CLI Expert",
-                goal="Handle Airflow CLI operations and testing",
-                backstory="DevOps expert managing Airflow deployments and testing",
-                tools=["cli_operations", "dag_testing"]
-            ),
-            "providers_author": Agent(
-                role="Provider Specialist",
-                goal="Manage provider-specific code and compatibility",
-                backstory="Expert in Airflow providers and their best practices",
-                tools=["provider_management", "connection_setup"]
-            ),
-            "ruff_formatter": Agent(
-                role="Code Quality Expert",
-                goal="Ensure code quality and style standards",
-                backstory="Python code quality specialist focusing on best practices",
-                tools=["code_formatting", "style_checking"]
-            ),
-            "python_profiler": Agent(
-                role="Performance Analyst",
-                goal="Analyze and optimize DAG performance",
-                backstory="Performance optimization specialist for Python and Airflow",
-                tools=["performance_analysis", "memory_profiling"]
-            ),
-            "mock_env": Agent(
-                role="Environment Manager",
-                goal="Manage test environments and validation",
-                backstory="Testing environment specialist for Airflow deployments",
-                tools=["environment_setup", "connection_mocking"]
-            )
+        super().__init__()
+        self.code_llm = LLM(model="qwen/qwen-2.5-coder-32b-instruct", temperature=0.01)
+        self.general_llm = LLM(model="qwen/qwq-32b-preview", temperature=0.01)
+        self.agents_config = {
+            "dag_prognosis": {},
+            "lead_author": {},
+            "airflow_cli": {},
+            "providers_author": {},
+            "ruff_formatter": {},
+            "python_profiler": {},
+            "mock_env": {}
         }
 
+    @agent
+    def dag_prognosis(self) -> Agent:
+        return Agent(
+            config=self.agents_config["dag_prognosis"],
+            llm=self.general_llm,
+            tools=["static_analysis", "pattern_detection"]
+        )
+
+    @agent
+    def lead_author(self) -> Agent:
+        return Agent(
+            config=self.agents_config["lead_author"],
+            llm=self.code_llm,
+            allow_code_execution=True,
+            tools=["code_generation", "code_review"]
+        )
+
+    @agent
+    def airflow_cli(self) -> Agent:
+        return Agent(
+            config=self.agents_config["airflow_cli"],
+            llm=self.general_llm,
+            tools=["cli_operations", "dag_testing"]
+        )
+
+    @agent
+    def providers_author(self) -> Agent:
+        return Agent(
+            config=self.agents_config["providers_author"],
+            llm=self.code_llm,
+            tools=["provider_management", "connection_setup"]
+        )
+
+    @agent
+    def ruff_formatter(self) -> Agent:
+        return Agent(
+            config=self.agents_config["ruff_formatter"],
+            llm=self.code_llm,
+            allow_code_execution=True,
+            tools=["code_formatting", "style_checking"]
+        )
+
+    @agent
+    def python_profiler(self) -> Agent:
+        return Agent(
+            config=self.agents_config["python_profiler"],
+            llm=self.code_llm,
+            allow_code_execution=True,
+            tools=["performance_analysis", "memory_profiling"]
+        )
+
+    @agent
+    def mock_env(self) -> Agent:
+        return Agent(
+            config=self.agents_config["mock_env"],
+            llm=self.general_llm,
+            tools=["environment_setup", "connection_mocking"]
+        )
+
+    @start()
     def analyze_dag(self, dag_path: Path) -> dict:
         # To learn more about structured task outputs, 
         # task dependencies, and task callbacks, check out the documentation:
         # https://docs.crewai.com/concepts/tasks#overview-of-a-task
-        tasks = [
-            Task(
-                description="Analyze DAG for issues",
-                agent=self.agents["dag_prognosis"]
-            ),
-            Task(
-                description="Check performance metrics",
-                agent=self.agents["python_profiler"]
-            ),
-            Task(
-                description="Validate runtime environment",
-                agent=self.agents["mock_env"]
-            )
-        ]
         crew = Crew(
-            agents=list(self.agents.values()),
-            tasks=tasks,
-            process=Process.sequential,
-            verbose=True
+            agents=[self.dag_prognosis(), self.python_profiler(), self.mock_env()],
+            tasks=[
+                Task(description="Analyze DAG for issues", agent=self.dag_prognosis()),
+                Task(description="Check performance metrics", agent=self.python_profiler()),
+                Task(description="Validate runtime environment", agent=self.mock_env())
+            ]
         )
         return crew.kickoff()
 
-    def fix_dag(self, dag_path: Path, issues: List[str]) -> dict:
-        tasks = [
-            Task(
-                description="Plan DAG fixes",
-                agent=self.agents["lead_author"]
-            ),
-            Task(
-                description="Apply provider updates",
-                agent=self.agents["providers_author"]
-            ),
-            Task(
-                description="Format and validate code",
-                agent=self.agents["ruff_formatter"]
-            )
-        ]
+    @listen(analyze_dag)
+    def fix_dag(self, dag_path: Path, analysis_result: dict) -> dict:
         crew = Crew(
-            agents=list(self.agents.values()),
-            tasks=tasks,
-            process=Process.sequential,
-            verbose=True
+            agents=[self.lead_author(), self.providers_author(), self.ruff_formatter()],
+            tasks=[
+                Task(description="Plan DAG fixes", agent=self.lead_author()),
+                Task(description="Apply provider updates", agent=self.providers_author()),
+                Task(description="Format and validate code", agent=self.ruff_formatter())
+            ]
         )
         return crew.kickoff()
 
+    @listen(fix_dag)
+    def validate_fixes(self, dag_path: Path, fix_result: dict) -> dict:
+        crew = Crew(
+            agents=[self.dag_prognosis(), self.python_profiler()],
+            tasks=[
+                Task(description="Validate fixes", agent=self.dag_prognosis()),
+                Task(description="Verify performance", agent=self.python_profiler())
+            ]
+        )
+        return crew.kickoff()
+
+    @start()
     def generate_dag(self, prompt: str) -> dict:
-        tasks = [
-            Task(
-                description="Generate DAG structure",
-                agent=self.agents["lead_author"]
-            ),
-            Task(
-                description="Setup providers and connections",
-                agent=self.agents["providers_author"]
-            ),
-            Task(
-                description="Validate and optimize",
-                agent=self.agents["dag_prognosis"]
-            )
-        ]
         crew = Crew(
-            agents=list(self.agents.values()),
-            tasks=tasks,
-            process=Process.sequential,
-            verbose=True
+            agents=[self.lead_author(), self.providers_author(), self.dag_prognosis()],
+            tasks=[
+                Task(description="Generate DAG structure", agent=self.lead_author()),
+                Task(description="Setup providers and connections", agent=self.providers_author()),
+                Task(description="Validate and optimize", agent=self.dag_prognosis())
+            ]
         )
         return crew.kickoff()
