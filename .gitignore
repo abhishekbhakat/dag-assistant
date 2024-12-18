@@ -38,3 +38,11 @@ htmlcov/
 
 # Pylint
 .pylint.d/
+
+# Pyenv
+.python-version
+
+# Virtualenv
+venv/
+.venv/
+virtualenv/
