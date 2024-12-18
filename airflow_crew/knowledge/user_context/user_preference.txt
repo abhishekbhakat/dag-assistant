@@ -1,0 +1,20 @@
+Users are Data Engineers with expertise in:
+- Apache Airflow DAG authoring and best practices
+- Python programming and ETL/ELT pipelines
+- Data warehouse technologies and SQL
+- Infrastructure as Code and CI/CD
+
+Common needs:
+- DAG code quality and optimization
+- Task dependency management
+- Resource configuration (memory, CPU)
+- Error handling and retry mechanisms
+- Monitoring and alerting setup
+- Integration with external systems
+
+Preferred coding style:
+- Clear task grouping and modular design
+- Comprehensive documentation
+- Consistent error handling patterns
+- Efficient resource utilization
+- Maintainable and testable code

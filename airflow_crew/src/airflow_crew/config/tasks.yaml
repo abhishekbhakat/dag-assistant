@@ -1,17 +1,44 @@
-research_task:
-  description: >
-    Conduct a thorough research about {topic}
-    Make sure you find any interesting and relevant information given
-    the current year is 2024.
-  expected_output: >
-    A list with 10 bullet points of the most relevant information about {topic}
-  agent: researcher
+analyze_dag:
+  description: Analyze DAG for issues and improvements
+  expected_output: List of issues and recommendations with scores
+  agent: dag_prognosis
 
-reporting_task:
-  description: >
-    Review the context you got and expand each topic into a full section for a report.
-    Make sure the report is detailed and contains any and all relevant information.
-  expected_output: >
-    A fully fledge reports with the mains topics, each with a full section of information.
-    Formatted as markdown without '```'
-  agent: reporting_analyst
+check_performance:
+  description: Check performance metrics and optimization opportunities
+  expected_output: Performance analysis report
+  agent: python_profiler
+
+validate_runtime:
+  description: Validate DAG in test environment
+  expected_output: Runtime validation report
+  agent: mock_env
+
+plan_fixes:
+  description: Plan DAG fixes based on analysis
+  expected_output: Fix plan with prioritized changes
+  agent: lead_author
+
+update_providers:
+  description: Update and validate provider configurations
+  expected_output: Provider update report
+  agent: providers_author
+
+format_code:
+  description: Format and validate code style
+  expected_output: Formatted code with style report
+  agent: ruff_formatter
+
+generate_structure:
+  description: Generate initial DAG structure
+  expected_output: Base DAG code
+  agent: lead_author
+
+setup_providers:
+  description: Configure required providers and connections
+  expected_output: Provider setup configuration
+  agent: providers_author
+
+validate_dag:
+  description: Validate generated DAG structure
+  expected_output: Validation report with scores
+  agent: dag_prognosis
