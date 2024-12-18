@@ -1,0 +1,20 @@
+[project]
+name = "airflow_crew"
+version = "0.1.0"
+description = "airflow-crew using crewAI"
+authors = [{ name = "Abhishek Bhakat", email = "abhishek.bhakat@hotmail.com" }]
+requires-python = ">=3.10,<=3.13"
+dependencies = [
+    "crewai[tools]>=0.86.0,<1.0.0"
+]
+
+[project.scripts]
+airflow_crew = "airflow_crew.main:run"
+run_crew = "airflow_crew.main:run"
+train = "airflow_crew.main:train"
+replay = "airflow_crew.main:replay"
+test = "airflow_crew.main:test"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
