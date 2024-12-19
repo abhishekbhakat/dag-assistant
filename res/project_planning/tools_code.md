@@ -15,6 +15,16 @@
 - **Astronomer Runtime**:
   - Faster build and startup time
 
+### Existing Docker Tools
+- **LangChain**:
+  - `DockerRunTool`: Execute commands in containers
+  - `DockerInspectTool`: Container/image inspection
+  - `DockerBuildTool`: Build custom images
+
+- **LlamaIndex**:
+  - No direct Docker tools
+  - Can parse Dockerfiles via `FileReader`
+
 ### Implementation
 - DAG Prognosis as plugin
 - Mount plugin to `/opt/airflow/plugins` or `/usr/local/airflow/plugins`
@@ -55,5 +65,5 @@
 ## Radical Approach
 Combine all three:
 1. Docker: Runtime validation with OSS/Astro
-2. LangChain: Static analysis
+2. LangChain: Static analysis + Docker management
 3. LlamaIndex: Code understanding
