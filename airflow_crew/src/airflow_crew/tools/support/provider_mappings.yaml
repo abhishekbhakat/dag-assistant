@@ -1,0 +1,25 @@
+---
+# Database Providers
+sqlalchemy: apache-airflow-providers-common-sql
+psycopg2: apache-airflow-providers-postgres
+pymysql: apache-airflow-providers-mysql
+snowflake: apache-airflow-providers-snowflake
+bigquery: apache-airflow-providers-google
+redshift: apache-airflow-providers-amazon
+
+# Cloud Storage
+boto3: apache-airflow-providers-amazon
+google.cloud.storage: apache-airflow-providers-google
+azure.storage: apache-airflow-providers-microsoft-azure
+
+# APIs and Services
+requests: apache-airflow-providers-http
+slack: apache-airflow-providers-slack
+sendgrid: apache-airflow-providers-sendgrid
+redis: apache-airflow-providers-redis
+elasticsearch: apache-airflow-providers-elasticsearch
+
+# Data Processing
+pandas: apache-airflow-providers-pandas-sql
+dbt: apache-airflow-providers-dbt-cloud
+great_expectations: apache-airflow-providers-great-expectations
