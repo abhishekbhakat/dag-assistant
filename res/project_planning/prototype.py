@@ -5,57 +5,63 @@ from textwrap import dedent
 dag_prognosis = Agent(
     role="DAG Analyzer",
     goal="Analyze DAG code for issues and improvements",
-    backstory=dedent("""
+    backstory=dedent(
+        """
         Expert in Apache Airflow DAG analysis.
         Focuses on code quality, patterns and anti-patterns.
-    """),
-    tools=["static_analysis", "pattern_detection"]
+    """
+    ),
+    tools=["static_analysis", "pattern_detection"],
 )
 
 lead_author = Agent(
     role="Lead DAG Author",
     goal="Coordinate DAG modifications and generation",
-    backstory=dedent("""
+    backstory=dedent(
+        """
         Senior Airflow developer who coordinates all DAG changes.
         Ensures best practices and consistency.
-    """),
-    tools=["code_generation", "code_review"]
+    """
+    ),
+    tools=["code_generation", "code_review"],
 )
 
 mock_env = Agent(
     role="Environment Manager",
     goal="Manage test Airflow environment",
-    backstory=dedent("""
+    backstory=dedent(
+        """
         DevOps expert who manages isolated Airflow environments.
         Handles connections, variables and runtime validation.
-    """),
-    tools=["docker", "airflow_api"]
+    """
+    ),
+    tools=["docker", "airflow_api"],
 )
 
 # Tasks
 analyze_task = Task(
     description="Analyze DAG for issues",
     agent=dag_prognosis,
-    expected_output="List of issues and recommendations"
+    expected_output="List of issues and recommendations",
 )
 
 fix_task = Task(
     description="Fix identified issues",
     agent=lead_author,
-    expected_output="Updated DAG code"
+    expected_output="Updated DAG code",
 )
 
 validate_task = Task(
     description="Validate changes in test environment",
     agent=mock_env,
-    expected_output="Validation report"
+    expected_output="Validation report",
 )
 
 # Crew
 dag_crew = Crew(
     agents=[dag_prognosis, lead_author, mock_env],
     tasks=[analyze_task, fix_task, validate_task],
-    process=Process.sequential
+    process=Process.sequential,
 )
 
 # Example Usage
