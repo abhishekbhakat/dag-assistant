@@ -5,6 +5,7 @@ import os
 from typing import Any
 
 import yaml
+from airflow_crew.tools.support import scoring
 
 # Load provider mappings
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -255,3 +256,60 @@ def analyze_dag_metadata(dag) -> dict[str, Any]:
         "dagrun_timeout": str(dag.dagrun_timeout) if dag.dagrun_timeout else None,
         "description": dag.description if dag.description else None,
     }
+
+
+def analyze_dag(code: str, dag=None) -> dict[str, Any]:
+    """Perform complete DAG analysis and return structured results.
+
+    Args:
+        code (str): The DAG code to analyze
+        dag (DAG, optional): DAG object for runtime analysis
+
+    Returns:
+        dict: Complete analysis results including score, color, and detailed analysis
+    """
+    # Static code analysis
+    imports = analyze_imports_ast(code)
+    dependencies = analyze_dependencies(code)
+    top_level = analyze_top_level_code_ast(code)
+    providers = analyze_missing_providers(imports["imports"])
+
+    # Build recommendations
+    recommendations: list[str] = []
+    for issue in imports["issues"] + providers:
+        if "recommendation" in issue:
+            recommendations.append(issue["recommendation"])
+
+    analysis = {
+        "summary": "DAG code analysis completed with the following findings:",
+        "imports": imports["imports"],
+        "issues": imports["issues"] + providers,
+        "dependencies": dependencies["dependencies"],
+        "top_level_code": top_level,
+        "recommendations": recommendations,
+    }
+
+    # Runtime analysis if DAG provided
+    if dag:
+        metadata = analyze_dag_metadata(dag)
+        task_metrics = {}
+        for task in dag.tasks:
+            task_metrics[task.task_id] = analyze_task_complexity(task)
+
+        analysis.update({"metadata": metadata, "task_metrics": task_metrics})
+
+        # Calculate DAG prognosis
+        dag_prognosis = scoring.calculate_dag_prognosis(dag)
+        analysis["dag_prognosis"] = dag_prognosis
+        # Use DAG prognosis score if available
+        score = dag_prognosis["score"]
+        # Update summary with runtime info
+        analysis["summary"] += f"\nRuntime analysis of DAG '{dag.dag_id}' included."
+    else:
+        # Use static analysis score
+        score = scoring.calculate_score(analysis)
+
+    # Add color indicator based on score
+    color = "green" if score >= 80 else "yellow" if score >= 60 else "red"
+
+    return {"score": score, "color": color, "analysis": analysis}
