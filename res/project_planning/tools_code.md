@@ -2,11 +2,16 @@
 
 ## Python Environment
 
-## Tool Categories
+## Available Tools Overview
 
-## DAG Analysis Tool Options
+1. **DAG Prognosis** - Static code analysis and validation
+2. **Performance Profiler** - Runtime performance analysis
 
-## 1. Docker-based Analysis
+## Tool 1: DAG Prognosis
+
+### Implementation Options
+
+#### 1. Docker-based Analysis
 
 ### Options
 - **Apache Airflow OSS**:
@@ -42,7 +47,7 @@
 - Image size
 - Network config
 
-## 2. LangChain Tools
+#### 2. LangChain Tools
 - **Pros**:
   - AST parsing
   - Code structure analysis
@@ -52,7 +57,7 @@
   - No provider validation
   - Static analysis only
 
-## 3. LlamaIndex Tools
+#### 3. LlamaIndex Tools
 - **Pros**:
   - Code pattern detection
   - Import analysis
@@ -62,7 +67,7 @@
   - No operator checks
   - Static analysis only
 
-## 4. Static Analysis Tool
+#### 4. Static Analysis Tool
 
 ### Return Format
 ```python
@@ -132,9 +137,116 @@
 - No scheduler access
 - Version-specific parsing
 
-## Radical Approach
-Combine all four:
-1. Docker: Runtime validation with OSS/Astro
-2. LangChain: Static analysis + Docker management
-3. LlamaIndex: Code understanding
-4. Custom Tool: Scoring system
+## Tool 2: Performance Profiler
+
+### Docker-based Profiling
+
+#### Base Image Configuration
+```dockerfile
+FROM apache/airflow:2.7.3-python3.11
+USER root
+RUN apt-get update && apt-get install -y linux-perf python3-pip
+RUN pip install py-spy
+USER airflow
+```
+
+#### Performance Metrics Collection
+
+1. **Py-spy Integration**
+   - Command: `py-spy record --pid <task_pid> --output profile.svg --duration 60`
+   - SVG output for flamegraph visualization
+   - Sampling interval: 1ms
+   - Native stack capturing enabled
+
+2. **Metrics Collected**:
+   - CPU utilization per function
+   - Memory allocation tracking
+   - I/O operations
+   - Lock contention points
+   - Stack trace samples
+
+3. **Collection Process**:
+   ```bash
+   # Start Airflow task
+   airflow tasks test <dag_id> <task_id> <execution_date>
+
+   # Get PID and attach py-spy
+   TASK_PID=$(ps aux | grep "airflow tasks test" | grep -v grep | awk '{print $2}')
+   py-spy record --pid $TASK_PID --output profile.svg --duration 60
+   ```
+
+### Implementation
+
+```python
+@dataclass
+class PerformanceMetrics:
+    task_id: str
+    execution_time: float
+    cpu_usage: Dict[str, float]  # function_name: percentage
+    memory_profile: Dict[str, int]  # allocation_point: bytes
+    io_operations: Dict[str, int]  # operation_type: count
+    lock_contentions: List[Dict[str, Any]]
+    hotspots: List[Dict[str, float]]  # function_name: time_percentage
+
+@dataclass
+class ProfilingReport:
+    dag_id: str
+    task_metrics: Dict[str, PerformanceMetrics]
+    total_runtime: float
+    bottlenecks: List[Dict[str, Any]]
+    recommendations: List[str]
+```
+
+### Docker Integration
+
+```bash
+#!/bin/bash
+# run_profiling.sh
+
+# Build profiler image
+docker build -t airflow-profiler -f Dockerfile.profiler .
+
+# Start container with profiling capabilities
+CONTAINER_ID=$(docker run -d \
+    -v "$(pwd)/dags:/opt/airflow/dags" \
+    --cap-add=SYS_PTRACE \
+    airflow-profiler:latest)
+
+# Run profiling
+docker exec $CONTAINER_ID \
+    python3 -m airflow_profiler \
+    --dag-id "${DAG_ID}" \
+    --task-id "${TASK_ID}" \
+    --duration 60
+
+# Copy results
+docker cp $CONTAINER_ID:/tmp/profile.svg ./profiles/${DAG_ID}_${TASK_ID}.svg
+docker cp $CONTAINER_ID:/tmp/metrics.json ./profiles/${DAG_ID}_${TASK_ID}.json
+
+# Cleanup
+docker stop $CONTAINER_ID
+docker rm $CONTAINER_ID
+```
+
+### Tool Characteristics
+
+#### Pros
+- Runtime performance insights
+- Memory leak detection
+- I/O bottleneck identification
+- Lock contention analysis
+- Visual flamegraph output
+
+#### Cons
+- Requires Docker setup
+- Performance overhead during profiling
+- Limited to task-level analysis
+- Storage requirements for profiles
+
+## Integration Strategy
+
+Both tools can be used independently or in combination:
+1. **DAG Prognosis** for static analysis and best practices
+2. **Performance Profiler** for runtime optimization
+
+This dual-tool approach provides both static validation and dynamic performance insights.
