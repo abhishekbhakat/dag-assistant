@@ -6,6 +6,8 @@
 
 1. **DAG Prognosis** - Static code analysis and validation
 2. **Performance Profiler** - Runtime performance analysis
+3. **Code Generation** - Initial code generation from prompts
+4. **Dependency Checker** - Dependency analysis and recommendations
 
 ## Tool 1: DAG Prognosis
 
@@ -243,10 +245,188 @@ docker rm $CONTAINER_ID
 - Limited to task-level analysis
 - Storage requirements for profiles
 
+## Tool 3: Code Generation
+
+### Implementation Options
+
+#### 1. Template-based Generation
+
+### Options
+- **Core DAG Templates**:
+  - Basic task flow patterns
+  - Common operator patterns
+  - Task group structures
+
+- **Provider Patterns**:
+  - Common provider usage patterns
+  - Connection configurations
+  - Best practices
+
+### Existing Tools
+- **AST Manipulation**:
+  - Parse and modify Python code
+  - Add imports and classes
+  - Structure code layout
+
+### Implementation
+- Pattern Library:
+  - Common DAG patterns
+  - Provider-specific patterns
+  - Task group templates
+
+- Code Generation:
+  - AST-based generation
+  - Dynamic imports
+  - Documentation generation
+
+### Return Format
+```python
+{
+    "code": str,  # Generated DAG code
+    "structure": {
+        "dag_id": str,  # Generated DAG ID
+        "description": str,  # DAG description
+        "schedule": str,  # Schedule interval
+        "tasks": List[Dict],  # List of generated tasks
+        "dependencies": List[Tuple],  # Task dependencies
+        "imports": List[str],  # Required imports
+        "providers": List[str],  # Required providers
+        "connections": List[Dict]  # Required connections
+    },
+    "recommendations": List[str]  # Best practices and notes
+}
+```
+
+### Key Features
+1. **Intent Understanding**:
+   - Prompt analysis
+   - Purpose identification
+   - Pattern matching
+
+2. **Code Structure**:
+   - Clean code organization
+   - Best practices compliance
+   - Documentation generation
+
+3. **Configuration**:
+   - Default schedules
+   - Resource settings
+   - Timeout configurations
+
+### Integration Points
+1. **CrewAI Tools**:
+   - Works with task assignments
+   - Structured outputs
+   - Feedback integration
+
+2. **Airflow Components**:
+   - DAG configuration
+   - Task definitions
+   - Documentation
+
+3. **Generation Pipeline**:
+   - Initial code creation
+   - Structure definition
+   - Documentation
+
+### Pros
+- Intent-driven generation
+- Best practices built-in
+- Documentation included
+
+### Cons
+- Pattern limitations
+- Complex flows handling
+- Custom patterns support
+
+## Tool 4: Dependency Checker
+
+### Implementation
+
+#### 1. Static Dependency Analysis
+
+### Options
+- **Poetry**:
+  - Dependency resolution and management
+  - Lockfile generation
+
+- **Pipenv**:
+  - Dependency management and virtual environments
+
+- **pip-tools**:
+  - Compiles requirements.txt to pinned dependencies
+
+### Existing Tools
+- **pipdeptree**:
+  - Shows dependency tree
+  - Detects circular dependencies
+
+### Implementation
+- Dependency Checker as a standalone script
+- Run checks via CLI or integrate with existing tools
+- Output results in structured format
+
+### Return Format
+```python
+{
+    "dependencies": Dict[str, str],  # package_name: version
+    "outdated": List[Dict],  # List of outdated packages with current and latest version
+    "conflicts": List[Dict],  # List of dependency conflicts with details
+    "recommendations": List[str]  # Actionable recommendations
+}
+```
+
+### Key Features
+1. **Dependency Resolution**:
+   - Automatic detection and resolution of dependencies
+   - Pinning of package versions
+
+2. **Conflicts Detection**:
+   - Identification of dependency conflicts
+   - Highlighting of conflicting packages and versions
+
+3. **Outdated Package Detection**:
+   - Checking for and listing outdated packages
+   - Recommending updates
+
+4. **Recommendations**:
+   - Providing specific recommendations for dependency management
+   - Suggesting package removals if necessary
+
+### Integration Points
+1. **CrewAI Tools**:
+   - Compatible with CrewAI's tool output patterns
+   - Supports result_as_answer parameter
+   - Structured for agent consumption
+
+2. **Airflow Components**:
+   - DAG object analysis
+   - Task-level dependencies
+
+3. **Analysis Pipeline**:
+   - Dependency analysis
+   - Conflict detection
+   - Outdated package checks
+   - Recommendation generation
+
+### Limitations
+- Static analysis only
+- No runtime checks
+
+### Pros
+- Dependency resolution and management
+- Conflict detection
+- Outdated package alerts
+
+### Cons
+- Static analysis only
+- No runtime checks
+
 ## Integration Strategy
 
-Both tools can be used independently or in combination:
+All three tools can be used independently or in combination:
 1. **DAG Prognosis** for static analysis and best practices
 2. **Performance Profiler** for runtime optimization
+3. **Dependency Checker** for dependency management and conflict resolution
 
-This dual-tool approach provides both static validation and dynamic performance insights.
+This tri-tool approach provides comprehensive analysis, optimization, and dependency management.
